@@ -1,5 +1,4 @@
 from tkinter import *
-from tkinter import Button
 from numpy import *
 import numpy as np
 
@@ -7,8 +6,7 @@ root = Tk()
 y = DoubleVar()
 f = DoubleVar()
 g = DoubleVar()
-
-
+actual = IntVar()
 # macierz smak,kuchani,typXsmak,kuchnia,typ
 matrix = np.zeros((3, 3), float)
 np.fill_diagonal(matrix, 1)
@@ -17,12 +15,16 @@ users_list = []
 
 
 def new_matrix():
-    x = int(n_entry.get())
-    for i in range(x):
-        matrix = np.zeros((3, 3), float)
-        np.fill_diagonal(matrix, 1)
-        users_list.append(matrix)
-    return print(users_list)
+    try:
+        x = int(n_entry.get())
+    except ValueError:
+        x = 0
+    if x > 0:
+        for i in range(x):
+            matrix = np.zeros((3, 3), float)
+            np.fill_diagonal(matrix, 1)
+            users_list.append(matrix)
+        user_input()
 
 
 def zmien(x):
@@ -34,57 +36,82 @@ def zmien(x):
 
 
 def pokaz():
-    return print(matrix)
+    print(matrix)
 
 
-def fun(value, l):
-    value = zmien(value)
-    for i in range(len(matrix)):
-        find = False
-        for j in range(len(matrix[i])):
-            if l == y:
-                matrix[0][1] = value
-                matrix[1][0] = 1 / value
-            elif l == f:
-                matrix[0][2] = value
-                matrix[2][0] = 1 / value
-            elif l == g:
-                matrix[1][2] = value
-                matrix[2][1] = 1 / value
-        if find:
-            break
+def fun():
+    matrix[0][1] = zmien(y.get())
+    matrix[1][0] = 1 / zmien(y.get())
+
+    matrix[0][2] = zmien(f.get())
+    matrix[2][0] = 1 / zmien(f.get())
+
+    matrix[1][2] = zmien(g.get())
+    matrix[2][1] = 1 / zmien(g.get())
     return matrix
 
+def next_user():
+        if actual.get() < len(users_list)-1:
+            actual.set(actual.get()+1)
+            user_input()
+        else:
+            pass    # stuff after weigh given by each user
 
-n = Label(root, text="ile typa").grid(row=0, column=0)
-n_entry = Entry(root)
-n_entry.grid(row=0, column=1)
-gen = Button(root, text="generuj", command=new_matrix).grid(row=0, column=3)
 
-krty1 = Label(root, text="smak").grid(row=1, column=0)
-kryt2 = Label(root, text="kuchnia").grid(row=1, column=3)
-krty3 = Label(root, text="kuchnia").grid(row=3, column=0)
-kryt4 = Label(root, text="typ").grid(row=3, column=3)
-krty5 = Label(root, text="smak").grid(row=5, column=0)
-kryt6 = Label(root, text="typ").grid(row=5, column=3)
+def prev_user():
+    if actual.get() > 0:
+        actual.set(actual.get() - 1)
+        user_input()
 
-slider = Scale(root, from_=-9, to=9, resolution=3, variable=y, orient=HORIZONTAL).grid(row=1, column=1)
-slider1 = Scale(root, from_=-9, to=9, resolution=3, variable=f, orient=HORIZONTAL).grid(row=3, column=1)
-slider2 = Scale(root, from_=-9, to=9, resolution=3, variable=g, orient=HORIZONTAL).grid(row=5, column=1)
-"""
-button = Button(root, text="add", command=lambda: [klik(y.get()), switch("button"), fun(y)])
-button1 = Button(root, text="add", command=lambda: [klik(f.get()), switch("button1"), fun(f)])
-button2 = Button(root, text="add", command=lambda: [klik(g.get()), switch("button2"), fun(g)])
-"""
-button = Button(root, text="zapisz", command=lambda: [fun(y.get(), y), fun(f.get(), f), fun(g.get(), g)])
-button4 = Button(root, text="zobacz_wyniki", command=lambda: pokaz())
-exit = Button(root, text="Quit", command=root.quit()).grid(row=8, column=1)
 
-button.grid(row=6, column=1)
-button4.grid(row=7, column=1)
+def user_input():
+    print(actual.get())
+    n_entry.destroy()
+    n.destroy()
+    gen.destroy()
+    krty1 = Label(root, text=f'użytkownik: {actual.get()+1}').grid(row=0, column=2)
+    krty1 = Label(root, text="smak").grid(row=1, column=0)
+    slider = Scale(root, from_=-9, to=9, resolution=3, variable=y, orient=HORIZONTAL)
+    slider.grid(row=1, column=2)
+    slider.set(0)
+    kryt2 = Label(root, text="kuchnia").grid(row=1, column=3)
+
+    krty3 = Label(root, text="kuchnia").grid(row=3, column=0)
+    slider1 = Scale(root, from_=-9, to=9, resolution=3, variable=f, orient=HORIZONTAL)
+    slider1.grid(row=3, column=2)
+    slider1.set(0)
+    kryt4 = Label(root, text="typ").grid(row=3, column=3)
+
+    krty5 = Label(root, text="smak").grid(row=5, column=0)
+    slider2 = Scale(root, from_=-9, to=9, resolution=3, variable=g, orient=HORIZONTAL)
+    slider2.grid(row=5, column=2)
+    slider2.set(0)
+    kryt6 = Label(root, text="typ").grid(row=5, column=3)
+
+    save = Button(root, text="zapisz", command=fun)
+    save.grid(row=6, column=2)
+    next_window = Button(root, text="następny", command=next_user)
+    next_window.grid(row=6, column=3)
+    prev_window = Button(root, text="poprzedni", command=prev_user)
+    prev_window.grid(row=6, column=0)
+    check_results = Button(root, text="zobacz_wyniki", command=pokaz)
+
+    check_results.grid(row=7, column=2)
+
+n = Label(root, text="ile typa")
+n.grid(row=0, column=0)
+default_entry = IntVar()
+default_entry.set(1)
+n_entry = Entry(root, textvariable=default_entry)
+n_entry.grid(row=0, column=2)
+gen = Button(root, text="generuj", command=new_matrix)
+gen.grid(row=0, column=3)
+close = Button(root, text="Quit", command=root.destroy).grid(row=8, column=2)
+
 """
 button1.grid(row=4, column=1)
 button2.grid(row=6, column=1)
 
 """
+
 mainloop()
