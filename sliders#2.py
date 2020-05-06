@@ -3,6 +3,7 @@ import tkinter.ttk as ttk
 import numpy as np
 import sqlite3
 
+
 # y = DoubleVar()
 # f = DoubleVar()
 # g = DoubleVar()
@@ -161,7 +162,7 @@ class StartPage(tk.Frame):
         tk.Button(self, text="Znajdź obiad",
                   command=lambda: master.switch_frame(AmountPeople)).grid(row=1, column=0)
         tk.Button(self, text="Dodaj użytkownika",
-                  command=lambda: master.switch_frame(AddNewUser)).grid(row=2, column=0)
+                  command=lambda: master.switch_frame(AddNewUser_PageOne)).grid(row=2, column=0)
 
 
 class AmountPeople(tk.Frame):
@@ -181,15 +182,57 @@ class AmountPeople(tk.Frame):
                   command=lambda: master.switch_frame(StartPage)).grid(row=100, column=0)
 
     def another_user(self):
-        tk.Label(self, text=f"User:{self.user_count+1}", font=('Helvetica', 10)).grid(row=self.user_count+1, column=0)
+        tk.Label(self, text=f"User:{self.user_count + 1}", font=('Helvetica', 10)).grid(row=self.user_count + 1,
+                                                                                        column=0)
         self.n_entry = tk.Entry(self)
-        self.n_entry.grid(row=self.user_count+1, column=2, padx=(10, 10))
+        self.n_entry.grid(row=self.user_count + 1, column=2, padx=(10, 10))
         self.n_entry = ttk.Combobox(self)
-        self.n_entry.grid(row=self.user_count+1, column=1, pady=(10, 10))
+        self.n_entry.grid(row=self.user_count + 1, column=1, pady=(10, 10))
         self.user_count += 1
 
 
-class AddNewUser(tk.Frame):
+class AddNewUser_PageOne(tk.Frame):
+    def __init__(self, master):
+        self.master = master
+        w = tk.IntVar()
+        tk.Frame.__init__(self, master)
+        tk.Label(self, text="Zaznacz czy..", font=('Helvetica', 18, "bold")).grid(row=0, column=1)
+        tk.Radiobutton(self, text="Jesz mięso", variable=w, value=1).grid(row=1, column=1)
+        tk.Radiobutton(self, text="Jesz ryby", variable=w, value=2).grid(row=2, column=1)
+        tk.Radiobutton(self, text="Jesteś wegetarianinem", variable=w, value=3).grid(row=3, column=1)
+        tk.Radiobutton(self, text="Jesteś weganinem", variable=w, value=4).grid(row=4, column=1)
+        tk.Button(self, text="Dalej",
+                  command=lambda: master.switch_frame(AddNewUser_PageTwo)).grid(row=5, column=2)
+        tk.Button(self, text="Powrót",
+                  command=lambda: master.switch_frame(StartPage)).grid(row=5, column=0)
+
+
+class AddNewUser_PageTwo(tk.Frame):
+    def __init__(self, master):
+        self.master = master
+        w = tk.IntVar()
+        a = tk.IntVar()
+        b = tk.IntVar()
+        c = tk.IntVar()
+        d = tk.IntVar()
+        tk.Frame.__init__(self, master)
+        tk.Label(self, text="Jestem uczulony na ...", font=('Helvetica', 18, "bold")).grid(row=0, column=1)
+        rb1 = tk.Checkbutton(self, text="nabiał")
+        rb1.grid(row=1, column=1)
+        tk.Checkbutton(self, text="orzechy").grid(row=2, column=1)
+        tk.Checkbutton(self, text="gluten").grid(row=3, column=1)
+        tk.Checkbutton(self, text="jajka").grid(row=4, column=1)
+        tk.Checkbutton(self, text="nie jestem uczulony", offvalue=5, variable=2).grid(row=4, column=1)
+        tk.Button(self, text="Dalej",
+                  command=lambda: master.switch_frame(AddNewUser_PageThree)).grid(row=5, column=2)
+        tk.Button(self, text="Powrót",
+                  command=lambda: master.switch_frame(AddNewUser_PageOne)).grid(row=5, column=0)
+        tk.Button(self, text="Wyczyść",
+                  command=lambda: self.rb1.set(None)).grid(row=5, column=1)
+
+
+
+class AddNewUser_PageThree(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         self.master = master
@@ -219,7 +262,7 @@ class AddNewUser(tk.Frame):
         tk.Button(self, text="zapisz",
                   command=lambda: master.switch_frame(StartPage)).grid(row=5, column=2)
         tk.Button(self, text="powrót",
-                  command=lambda: master.switch_frame(StartPage)).grid(row=5, column=0)
+                  command=lambda: master.switch_frame(AddNewUser_PageOne)).grid(row=5, column=0)
 
 
 if __name__ == '__main__':
