@@ -1,7 +1,11 @@
 import numpy as np
 
 class AHP:
-    def __init__(self, sliders):
+    def __init__(self, *sliders):
+        """
+        Handles whole AHP weights and stuff
+        Input: Sliders values
+        """
         # Prepare matrix
         self.criteria_count = len(sliders)
         self.matrix = self._prepare_matrix(sliders)
