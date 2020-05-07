@@ -20,11 +20,17 @@ class AHP:
         matrix = np.empty(shape=(self.criteria_count, self.criteria_count))
         for _i in range(self.criteria_count):
             value = criteria[_i]
+
+            # Adjust values from sliders, 0 is 1
             if value == 0:
                 value = 1
+            # If negative then change to positive and invert eg. -3 -> 1/3
             elif value < 0:
                 value = self._inv(-value)
+
+            # Insert 1 on matrix diagonal
             matrix[_i, _i] = 1
+            # Fill according to Uji = 1/Uij
             _j = _i + 1 if (_i + 1 < self.criteria_count) else 0
             matrix[_i, _j] = value
             matrix[_j, _i] = self._inv(value)
