@@ -45,6 +45,7 @@ class AHP:
         return normalized_matrix
 
     def _calculate_preferences(self, matrix=None):
+        """Calculate global preferences weights for all criteria"""
         if matrix is None:
             matrix = self.normalized_matrix
         return np.sum(matrix, axis=1)/self.criteria_count
