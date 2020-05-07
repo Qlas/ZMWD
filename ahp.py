@@ -4,6 +4,7 @@ class AHP:
     def __init__(self, sliders):
         # Prepare matrix
         self.matrix = self._prepare_matrix(sliders)
+        self.normalized_matrix = self._normalize_matrix(self.matrix)
 
     def _prepare_matrix(self, criteria):
         """
@@ -23,6 +24,14 @@ class AHP:
             matrix[_i, _j] = value
             matrix[_j, _i] = self._inv(value)
         return matrix
+
+    def _normalize_matrix(self, matrix=None):
+        """Normalize matrix columns to 1"""
+        if matrix is None:
+            matrix = self.matrix
+        column_sum = np.sum(matrix, axis=0)
+        normalized_matrix = matrix/column_sum
+        return normalized_matrix
 
     def _inv(self, value):
         """Inverts number eg. 9 to 1/9"""
