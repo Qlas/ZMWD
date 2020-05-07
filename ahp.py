@@ -54,7 +54,7 @@ class AHP:
         """Inverts number eg. 9 to 1/9"""
         return 1 / value
 
-AHP((3, 5, 9))
+AHP(3, 5, 9)
 # Creates this matrix:
 # [[1.         3.         0.11111111]
 #  [0.33333333 1.         5.        ]
