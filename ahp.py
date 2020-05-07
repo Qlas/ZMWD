@@ -5,7 +5,8 @@ class AHP:
         # Prepare matrix
         self.criteria_count = len(sliders)
         self.matrix = self._prepare_matrix(sliders)
-        self.normalized_matrix = self._normalize_matrix(self.matrix)
+        self.normalized_matrix = self._normalize_matrix()
+        self.global_preferences = self._calculate_preferences()
 
     def _prepare_matrix(self, criteria):
         """
@@ -32,6 +33,11 @@ class AHP:
         column_sum = np.sum(matrix, axis=0)
         normalized_matrix = matrix/column_sum
         return normalized_matrix
+
+    def _calculate_preferences(self, matrix=None):
+        if matrix is None:
+            matrix = self.normalized_matrix
+        return np.sum(matrix, axis=1)/self.criteria_count
 
     def _inv(self, value):
         """Inverts number eg. 9 to 1/9"""
