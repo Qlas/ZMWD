@@ -3,6 +3,7 @@ import numpy as np
 class AHP:
     def __init__(self, sliders):
         # Prepare matrix
+        self.criteria_count = len(sliders)
         self.matrix = self._prepare_matrix(sliders)
         self.normalized_matrix = self._normalize_matrix(self.matrix)
 
@@ -11,16 +12,15 @@ class AHP:
         Input: 1D iterable with n numbers
         Output: matrix nxn
         """
-        _criteria_count = len(criteria)
-        matrix = np.empty(shape=(_criteria_count, _criteria_count))
-        for _i in range(_criteria_count):
+        matrix = np.empty(shape=(self.criteria_count, self.criteria_count))
+        for _i in range(self.criteria_count):
             value = criteria[_i]
             if value == 0:
                 value = 1
             elif value < 0:
                 value = self._inv(-value)
             matrix[_i, _i] = 1
-            _j = _i + 1 if (_i + 1 < _criteria_count) else 0
+            _j = _i + 1 if (_i + 1 < self.criteria_count) else 0
             matrix[_i, _j] = value
             matrix[_j, _i] = self._inv(value)
         return matrix
