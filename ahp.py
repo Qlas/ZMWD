@@ -32,6 +32,8 @@ class AHP:
             matrix[_i, _i] = 1
             # Fill according to Uji = 1/Uij
             _j = _i + 1 if (_i + 1 < self.criteria_count) else 0
+            if _j == 0:
+                value = self._inv(value)
             matrix[_i, _j] = value
             matrix[_j, _i] = self._inv(value)
         return matrix
@@ -56,6 +58,6 @@ class AHP:
 
 AHP(3, 5, 9)
 # Creates this matrix:
-# [[1.         3.         0.11111111]
+# [[1.         3.         9.        ]
 #  [0.33333333 1.         5.        ]
-#  [9.         0.2        1.        ]]
+#  [0.11111111 0.2        1.        ]]
