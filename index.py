@@ -5,7 +5,7 @@ from database import Database
 
 class App(tk.Tk):
     users = []
-    new_user = {}
+    new_user = {'name': '', 'const': {}, 'allergy': {}, 'ahp': {}}
 
     def __init__(self):
         tk.Tk.__init__(self)
@@ -29,7 +29,7 @@ class App(tk.Tk):
 class StartPage(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
-        master.new_user = {}
+        master.new_user = {'name': '', 'const': {}, 'allergy': {}, 'ahp': {}}
         tk.Label(self, text="Start page", font=('Helvetica', 18, "bold")).grid(row=0, column=0)
         tk.Button(self, text="Znajdź obiad",
                   command=lambda: master.switch_frame(AmountPeople)).grid(row=1, column=0)
@@ -84,19 +84,18 @@ class AddNewUserPageOne(tk.Frame):
                   command=self.next_page).grid(row=7, column=2)
         tk.Button(self, text="Powrót",
                   command=lambda: master.switch_frame(StartPage)).grid(row=7, column=0)
-        if len(self.master.new_user) == 1:
+        if self.master.new_user['name'] != '':
             self.set_values()
 
     def set_values(self):
-        name = next(iter(self.master.new_user))
-        self.n_entry.insert(0, name)
-        if self.master.new_user[name]['const']['mięso'] == 1:
+        self.n_entry.insert(0, self.master.new_user['name'])
+        if self.master.new_user['const']['mięso'] == 1:
             self.w.set(1)
-        elif self.master.new_user[name]['const']['wegetarianin'] == 1:
+        elif self.master.new_user['const']['wegetarianin'] == 1:
             self.w.set(2)
         else:
             self.w.set(3)
-        self.fish.set(self.master.new_user[name]['const']['ryby'])
+        self.fish.set(self.master.new_user['const']['ryby'])
 
     def next_page(self):
         if self.n_entry.get() == '' or self.n_entry.get().startswith(' '):
@@ -109,15 +108,11 @@ class AddNewUserPageOne(tk.Frame):
             elif self.w.get() == 0:
                 self.error['text'] = 'Musisz zaznaczyć radio'
             else:
-                name = self.n_entry.get()
-                if len(self.master.new_user) == 0 or next(iter(self.master.new_user)) != self.n_entry.get():
-                    self.master.new_user = {}
-                    self.master.new_user[name] = {}
-
-                self.master.new_user[name]['const'] = {'ryby': self.fish.get(),
-                                                       'mięso': 1 if self.w.get() == 1 else 0,
-                                                       'wegetarianin': 1 if self.w.get() == 2 else 0,
-                                                       'weganin': 1 if self.w.get() == 3 else 0}
+                self.master.new_user['name'] = self.n_entry.get()
+                self.master.new_user['const'] = {'ryby': self.fish.get(),
+                                                 'mięso': 1 if self.w.get() == 1 else 0,
+                                                 'wegetarianin': 1 if self.w.get() == 2 else 0,
+                                                 'weganin': 1 if self.w.get() == 3 else 0}
                 self.master.switch_frame(AddNewUserPageTwo)
 
 
@@ -139,14 +134,11 @@ class AddNewUserPageTwo(tk.Frame):
         tk.Button(self, text="Wyczyść",
                   command=self.reset).grid(row=5, column=1)
 
-        try:
-            _ = self.master.new_user[next(iter(self.master.new_user))]['allergy']
+        if len(self.master.new_user['allergy'].values()) > 0:
             self.set_values()
-        except KeyError:
-            pass
 
     def set_values(self):
-        values = list(self.master.new_user[next(iter(self.master.new_user))]['allergy'].values())
+        values = list(self.master.new_user['allergy'].values())
         for i in range(len(values)):
             self.allergy[i].set(values[i])
 
@@ -155,9 +147,8 @@ class AddNewUserPageTwo(tk.Frame):
             i.set(0)
 
     def next_page(self):
-        self.master.new_user[next(iter(self.master.new_user))]['allergy'] = {}
         for i in range(len(self.allergies)):
-            self.master.new_user[next(iter(self.master.new_user))]['allergy'][self.allergies[i]] = self.allergy[i].get()
+            self.master.new_user['allergy'][self.allergies[i]] = self.allergy[i].get()
         print(self.master.new_user)
         self.master.switch_frame(AddNewUserPageThree)
 
@@ -182,8 +173,8 @@ class AddNewUserPageThree(tk.Frame):
         self.labels[0].grid(row=1, column=1)
         tk.Label(self, text="smak").grid(row=2, column=0)
         self.sliders.append(tk.Scale(self, from_=0, to=8,
-                               command=lambda value: self.value_check(value, self.labels[0]),
-                               orient=tk.HORIZONTAL, showvalue=0, variable=self.values[0]))
+                                     command=lambda value: self.value_check(value, self.labels[0]),
+                                     orient=tk.HORIZONTAL, showvalue=0, variable=self.values[0]))
         self.sliders[0].grid(row=2, column=1)
         tk.Label(self, text="kuchnia").grid(row=2, column=2)
 
@@ -193,8 +184,8 @@ class AddNewUserPageThree(tk.Frame):
         self.labels[1].grid(row=4, column=1)
         tk.Label(self, text="kuchnia").grid(row=5, column=0)
         self.sliders.append(tk.Scale(self, from_=0, to=8,
-                                command=lambda value: self.value_check(value, self.labels[1]),
-                                orient=tk.HORIZONTAL, showvalue=0, variable=self.values[1]))
+                                     command=lambda value: self.value_check(value, self.labels[1]),
+                                     orient=tk.HORIZONTAL, showvalue=0, variable=self.values[1]))
         self.sliders[1].grid(row=5, column=1)
         tk.Label(self, text="typ").grid(row=5, column=2)
 
@@ -204,8 +195,8 @@ class AddNewUserPageThree(tk.Frame):
         self.labels[2].grid(row=7, column=1)
         tk.Label(self, text="smak").grid(row=8, column=0)
         self.sliders.append(tk.Scale(self, from_=0, to=8,
-                                command=lambda value: self.value_check(value, self.labels[2]),
-                                orient=tk.HORIZONTAL, showvalue=0, variable=self.values[2]))
+                                     command=lambda value: self.value_check(value, self.labels[2]),
+                                     orient=tk.HORIZONTAL, showvalue=0, variable=self.values[2]))
         self.sliders[2].grid(row=8, column=1)
         tk.Label(self, text="typ").grid(row=8, column=2)
 
@@ -214,14 +205,11 @@ class AddNewUserPageThree(tk.Frame):
         tk.Button(self, text="powrót",
                   command=lambda: master.switch_frame(AddNewUserPageTwo)).grid(row=9, column=0)
 
-        try:
-            _ = self.master.new_user[next(iter(self.master.new_user))]['ahp']
+        if len(self.master.new_user['ahp'].values()) > 0:
             self.set_values()
-        except KeyError:
-            pass
 
     def set_values(self):
-        values = list(self.master.new_user[next(iter(self.master.new_user))]['ahp'].values())
+        values = list(self.master.new_user['ahp'].values())
         for i in range(len(self.values)):
             value = self.ahp_value.index(values[i])
             self.values[i].set(value)
@@ -231,11 +219,10 @@ class AddNewUserPageThree(tk.Frame):
         label['text'] = self.text_val[int(value)]
 
     def next_page(self):
-        self.master.new_user[next(iter(self.master.new_user))]['ahp'] = {}
+        self.master.new_user['ahp'] = {}
         names = ('kuchnia-smak', 'typ-kuchnia', 'typ-smak')
         for i in range(len(names)):
-            self.master.new_user[next(iter(self.master.new_user))]['ahp'][names[i]] \
-                = self.ahp_value[self.values[i].get()]
+            self.master.new_user['ahp'][names[i]] = self.ahp_value[self.values[i].get()]
         print(self.master.new_user)
         self.master.switch_frame(AddNewUserPageFour)
 
@@ -258,11 +245,7 @@ class AddNewUserPageFour(tk.Frame):
         tk.Button(self, text="Wyczyść",
                   command=self.reset).grid(row=5, column=1)
 
-        try:
-            _ = self.master.new_user[next(iter(self.master.new_user))]['allergy']
-            self.set_values()
-        except KeyError:
-            pass
+
 
     def set_values(self):
         values = list(self.master.new_user[next(iter(self.master.new_user))]['allergy'].values())
@@ -279,6 +262,7 @@ class AddNewUserPageFour(tk.Frame):
             self.master.new_user[next(iter(self.master.new_user))]['allergy'][self.allergies[i]] = self.allergy[i].get()
         print(self.master.new_user)
         self.master.switch_frame(AddNewUserPageThree)
+
 
 if __name__ == '__main__':
     app = App()
