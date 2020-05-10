@@ -16,13 +16,13 @@ class Database:
             self.c.execute("CREATE TABLE ahp_pref(ahp_pref_name TEXT PRIMARY KEY)")
             self.c.execute("CREATE TABLE res(res_name TEXT PRIMARY KEY)")
             self.c.execute("CREATE TABLE pref(type_name TEXT, subtype TEXT, PRIMARY KEY(type_name, subtype))")
-            self.c.execute("CREATE TABLE user_ahp_pref(user_id INTEGER, ahp_pref_name TEXT, FOREIGN KEY("
+            self.c.execute("CREATE TABLE user_ahp_pref(user_id INTEGER, ahp_pref_name TEXT, value REAL, FOREIGN KEY("
                            "user_id) REFERENCES users(id), FOREIGN KEY (ahp_pref_name) REFERENCES ahp_pref("
                            "ahp_pref_name), PRIMARY KEY (user_id, ahp_pref_name))")
-            self.c.execute("CREATE TABLE user_res(user_id INTEGER, res_name TEXT, FOREIGN KEY(user_id) REFERENCES "
+            self.c.execute("CREATE TABLE user_res(user_id INTEGER, res_name TEXT, value REAL, FOREIGN KEY(user_id) REFERENCES "
                            "users(id), FOREIGN KEY(res_name) REFERENCES res(res_name), PRIMARY KEY(user_id, "
                            "res_name))")
-            self.c.execute("CREATE TABLE user_pref(user_id INTEGER, type_name TEXT, subtype TEXT, FOREIGN KEY("
+            self.c.execute("CREATE TABLE user_pref(user_id INTEGER, type_name TEXT, subtype TEXT, value REAL, FOREIGN KEY("
                            "user_id) REFERENCES users(id), FOREIGN KEY(type_name) REFERENCES pref(type_name), "
                            "FOREIGN KEY(subtype) REFERENCES pref(subtype), PRIMARY KEY(user_id, type_name, subtype))")
             self._fill_data()
@@ -32,7 +32,7 @@ class Database:
     def _fill_data(self):
         self.c.execute("INSERT INTO ahp_pref(ahp_pref_name) VALUES('kuchnia-smak'), ('kuchnia-typ'), ('smak-typ')")
         self.c.execute("INSERT INTO res(res_name) VALUES('nabiał'), ('orzechy'), ('gluten'), ('jajka i produkty "
-                       "pochodne'), ('nasiona sezamu'), ('wegetarianin'), ('weganin'), ('ryby')")
+                       "pochodne'), ('nasiona sezamu'), ('mięso'), ('wegetarianin'), ('weganin'), ('ryby')")
         self.c.execute("INSERT INTO pref(type_name, subtype) VALUES('smak', 'słony'), ('smak', 'słodki'), ('smak', "
                        "'kwaśny'), ('smak', 'ostry'), ('typ', 'zupa'), ('typ', 'sałatka'), ('typ', 'makaron'), "
                        "('typ', 'deser'), ('typ', 'danie główne'), ('kuchnia', 'polska'), ('kuchnia', 'włoska'), "
