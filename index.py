@@ -5,7 +5,7 @@ from database import Database
 
 class App(tk.Tk):
     users = []
-    new_user = {'name': '', 'const': {}, 'allergy': {}, 'ahp': {}}
+    new_user = {'name': '', 'const': {}, 'allergy': {}, 'ahp': {}, 'pref': {'smak': {}, 'typ': {}, 'kuchnia': {}}}
 
     def __init__(self):
         tk.Tk.__init__(self)
@@ -29,7 +29,8 @@ class App(tk.Tk):
 class StartPage(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
-        master.new_user = {'name': '', 'const': {}, 'allergy': {}, 'ahp': {}}
+        master.new_user = {'name': '', 'const': {}, 'allergy': {}, 'ahp': {},
+                           'pref': {'smak': {}, 'typ': {}, 'kuchnia': {}}}
         tk.Label(self, text="Start page", font=('Helvetica', 18, "bold")).grid(row=0, column=0)
         tk.Button(self, text="Znajdź obiad",
                   command=lambda: master.switch_frame(AmountPeople)).grid(row=1, column=0)
@@ -230,38 +231,99 @@ class AddNewUserPageThree(tk.Frame):
 class AddNewUserPageFour(tk.Frame):
     def __init__(self, master):
         self.master = master
-        self.allergy = [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
-        self.allergies = ('nabiał', 'orzechy', 'gluten', 'jajka')
         tk.Frame.__init__(self, master)
-
         print(self.master.new_user)
-        tk.Label(self, text="NOT IMPLEMENTED YET", font=('Helvetica', 18, "bold")).grid(row=0, column=1)
-        for i in range(len(self.allergies)):
-            tk.Checkbutton(self, text=self.allergies[i], variable=self.allergy[i]).grid(row=i + 1, column=1)
-        tk.Button(self, text="Dalej",
-                  command=self.next_page).grid(row=5, column=2)
-        tk.Button(self, text="Powrót",
-                  command=lambda: master.switch_frame(AddNewUserPageThree)).grid(row=5, column=0)
-        tk.Button(self, text="Wyczyść",
-                  command=self.reset).grid(row=5, column=1)
+        self.actual = 'taste'
+        self.master.database.c.execute("SELECT * FROM pref")
+        data = self.master.database.c.fetchall()
+        self.taste = [i[1] for i in data if i[0] == 'smak']
+        self.type = [i[1] for i in data if i[0] == 'typ']
+        self.cuisine = [i[1] for i in data if i[0] == 'kuchnia']
+        self.title = tk.Label(self, text="Ustaw smak od najlepszego do najgorszego", font=('Helvetica', 10, "bold"))
+        self.title.grid(column=1, columnspan=3)
+        self.l = tk.Listbox(self, selectmode=tk.SINGLE)
+        if len(master.new_user['pref']['smak']) == 0:
+            self.instert_to_list(self.taste)
+        else:
+            self.actual = 'type'
+            self.prev_page()
+        self.l.grid(row=1, column=2, rowspan=8)
+
+        tk.Button(self, text="up",
+                  command=self.up).grid(row=3, column=3)
+        tk.Button(self, text="down",
+                  command=self.down).grid(row=4, column=3)
+
+        tk.Button(self, text="dalej",
+                  command=self.next_page).grid(row=9, column=3)
+        tk.Button(self, text="powrót",
+                  command=self.prev_page).grid(row=9, column=1)
 
 
-
-    def set_values(self):
-        values = list(self.master.new_user[next(iter(self.master.new_user))]['allergy'].values())
-        for i in range(len(values)):
-            self.allergy[i].set(values[i])
-
-    def reset(self):
-        for i in self.allergy:
-            i.set(0)
+    def prev_page(self):
+        if self.actual == 'taste':
+            self.master.switch_frame(AddNewUserPageThree)
+        elif self.actual == 'type':
+            self.title['text'] = "Ustaw smak od najlepszego do najgorszego"
+            self.clear_list()
+            self.actual = 'taste'
+            _list = sorted(self.master.new_user['pref']['smak'].items(), key=lambda x: x[1], reverse=True)
+            self.instert_to_list([i[0] for i in _list])
+        else:
+            self.title['text'] = "Ustaw typ od najlepszego do najgorszego"
+            self.clear_list()
+            self.actual = 'type'
+            _list = sorted(self.master.new_user['pref']['typ'].items(), key=lambda x: x[1], reverse=True)
+            self.instert_to_list([i[0] for i in _list])
 
     def next_page(self):
-        self.master.new_user[next(iter(self.master.new_user))]['allergy'] = {}
-        for i in range(len(self.allergies)):
-            self.master.new_user[next(iter(self.master.new_user))]['allergy'][self.allergies[i]] = self.allergy[i].get()
+        if self.actual == 'taste':
+            self.title['text'] = "Ustaw typ od najlepszego do najgorszego"
+            for i in self.taste:
+                self.master.new_user['pref']['smak'][i] = self.l.index(tk.END) - self.l.get(0, "end").index(i)
+            self.actual = 'type'
+            self.clear_list()
+            self.instert_to_list(self.type)
+        elif self.actual == 'type':
+            self.title['text'] = "Ustaw kuchnie od najlepszego do najgorszego"
+            for i in self.type:
+                self.master.new_user['pref']['typ'][i] = self.l.index(tk.END) - self.l.get(0, "end").index(i)
+            self.actual = 'cuisine'
+            self.clear_list()
+            self.instert_to_list(self.cuisine)
+        else:
+            for i in self.cuisine:
+                self.master.new_user['pref']['kuchnia'][i] = self.l.index(tk.END) - self.l.get(0, "end").index(i)
+
+            self.master.database.save_user(self.master.new_user)
+            self.master.switch_frame(StartPage)
         print(self.master.new_user)
-        self.master.switch_frame(AddNewUserPageThree)
+
+    def clear_list(self):
+        while self.l.index(tk.END) > 0:
+            print(self.l.index(tk.END))
+            self.l.delete(0)
+
+    def instert_to_list(self, _list):
+        for i in _list:
+            self.l.insert(tk.END, i)
+
+    def up(self):
+        active = self.l.index(tk.ACTIVE)
+        if active != 0:
+            text = self.l.get(active)
+            self.l.delete(active)
+            self.l.insert(active-1, text)
+            self.l.activate(active-1)
+
+    def down(self):
+        active = self.l.index(tk.ACTIVE)
+        text = self.l.get(active)
+        self.l.delete(active)
+        self.l.insert(active+1, text)
+        self.l.activate(active+1)
+
+
 
 
 if __name__ == '__main__':
