@@ -61,3 +61,4 @@ class Database:
             for key, value in value_type.items():
                 self.c.execute("INSERT INTO user_pref(user_id, type_name, subtype, value) "
                                "VALUES (?, ?, ?, ?)", (user_id, key_type, key, value))
+        self.connect.commit()
