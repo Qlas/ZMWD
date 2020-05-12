@@ -8,6 +8,7 @@ class MealSelection:
         self.database = database.connect
         self.users, self.weights = self._extract_users_and_weights(users_and_weights)
         self.meat, self.allergens = self._get_all_restrictions()
+        self.meals = self._get_all_meals()
 
     def _extract_users_and_weights(self, users_and_weights):
         users = []
@@ -16,6 +17,11 @@ class MealSelection:
             users.append(user.get())
             weights.append(float(weight.get()))
         return tuple(users), tuple(weights)
+
+    def _get_all_meals(self):
+        query = "SELECT * FROM meals"
+        meals = pd.read_sql_query(query, self.database).set_index(['id'])
+        return meals
 
     def _get_all_restrictions(self):
         # If only one user is given then query must be altered a bit, otherwise it will throw an error
