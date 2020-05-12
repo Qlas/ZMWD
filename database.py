@@ -1,4 +1,5 @@
 import sqlite3
+import pandas as pd
 
 
 class Database:
@@ -27,8 +28,13 @@ class Database:
                            "FOREIGN KEY( "
                            "user_id) REFERENCES users(id), FOREIGN KEY(type_name) REFERENCES pref(type_name), "
                            "FOREIGN KEY(subtype) REFERENCES pref(subtype), PRIMARY KEY(user_id, type_name, subtype))")
+            self.c.execute("CREATE TABLE meals(id INTEGER PRIMARY KEY, name TEXT, wege INTEGER, wegan INTEGER, "
+                           "ryby INTEGER, nabiał INTEGER, orzechy INTEGER, gluten INTEGER, jajka INTEGER, "
+                           "nasiona INTEGER, słony INTEGER, słodki INTEGER, ostry INTEGER, kwaśny INTEGER, "
+                           "polska INTEGER, włoska INTEGER, japońska INTEGER, indyjska INTEGER, chińska INTEGER, "
+                           "amerykańska INTEGER, śniadanie INTEGER, obiad INTEGER, kolacja INTEGER, zupa INTEGER, "
+                           "sałatka INTEGER, makaron INTEGER, danie_głowne INTEGER, deser INTEGER)")
             self._fill_data()
-
             self.connect.commit()
 
     def _fill_data(self):
@@ -40,6 +46,11 @@ class Database:
                        "('typ', 'deser'), ('typ', 'danie główne'), ('kuchnia', 'polska'), ('kuchnia', 'włoska'), "
                        "('kuchnia', 'japońska'), ('kuchnia', 'indyjska'), ('kuchnia', 'chińska'), ('kuchnia', "
                        "'amerykańska')")
+        data = read_xls()
+        print(data[0])
+        for i in data:
+            self.c.execute("INSERT INTO meals VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                           "?, ?, ?, ?, ?, ?, ?)", i)
 
     def close_connection(self):
         self.connect.commit()
@@ -62,3 +73,10 @@ class Database:
                 self.c.execute("INSERT INTO user_pref(user_id, type_name, subtype, value) "
                                "VALUES (?, ?, ?, ?)", (user_id, key_type, key, value))
         self.connect.commit()
+
+
+def read_xls():
+    df = pd.read_excel('potrawy.xlsx', 'Arkusz1', skiprows=1)
+    df.pop('link')
+    df = df.transpose()
+    return [df[i] for i in df if not pd.isnull(df[i][1]) and df[i][1] not in ('Nazwa', 'SUMA')]
