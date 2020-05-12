@@ -7,9 +7,11 @@ class MealSelection:
     def __init__(self, database, users_and_weights):
         self.database = database.connect
         self.users, self.weights = self._extract_users_and_weights(users_and_weights)
+        self.users_count = len(self.users)
         self.meat, self.allergens = self._get_all_restrictions()
         self.meals = self._get_all_meals()
         self.meals = self._apply_allergen_restrictions()
+        self.meals = self._apply_meat_restrictions()
 
     def _extract_users_and_weights(self, users_and_weights):
         """Extracts data from [(usercombo, weightfield), ...]"""
@@ -41,4 +43,16 @@ class MealSelection:
         filtered_meals = self.meals
         for allergen in active_allergens:
             filtered_meals = filtered_meals.loc[filtered_meals[allergen] < 1]
+        return filtered_meals
+
+    def _apply_meat_restrictions(self):
+        """Filters out meaty meals if needed"""
+        # Filter out fish if not everyone eats them
+        filtered_meals = self.meals
+        if (float(self.meat.loc['ryby']) <= self.users_count):
+            filtered_meals = filtered_meals.loc[filtered_meals['ryby'] < 1]
+        # Now filter out regular meat if any vege type is active
+        for vege_type in ['wegetarianin', 'weganin']:
+            if (float(self.meat.loc[vege_type]) >= 1):
+                filtered_meals = filtered_meals.loc[filtered_meals[vege_type] >= 1]
         return filtered_meals
