@@ -31,7 +31,7 @@ class MealSelection:
         query_filter = f"IN {self.users}" if len(self.users) > 1 else f"= '{self.users[0]}'"
         query = f"SELECT res_name, SUM(value) FROM users INNER JOIN user_res ON users.id=user_res.user_id WHERE users.name {query_filter} GROUP BY res_name"
         result = pd.read_sql_query(query, self.database).set_index(['res_name'])
-        meat_data = result.loc[['ryby', 'weganin', 'wegetarianin']]
+        meat_data = result.loc[['mięso', 'ryby', 'weganin', 'wegetarianin']]
         allergens_data = result.loc[result.index.difference(meat_data.index).values]
         return meat_data, allergens_data
 
