@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from database import Database
-
+from meal_selection import MealSelection
 
 class App(tk.Tk):
     users = []
@@ -53,9 +53,12 @@ class AmountPeople(tk.Frame):
         tk.Button(self, text="kolejny",
                   command=self.another_user).grid(row=100, column=1)
         tk.Button(self, text="dalej",
-                  command=lambda: master.switch_frame(StartPage)).grid(row=100, column=2)
+                  command=self.find_meal).grid(row=100, column=2)
         tk.Button(self, text="powrót",
                   command=lambda: master.switch_frame(StartPage)).grid(row=100, column=0)
+
+    def find_meal(self):
+        self.meals = MealSelection(self.master.database, self.chosen_users)
 
     def another_user(self):
         tk.Label(self, text=f"User:{self.user_count + 1}", font=('Helvetica', 10)).grid(row=self.user_count + 1,
