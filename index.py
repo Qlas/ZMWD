@@ -40,12 +40,15 @@ class StartPage(tk.Frame):
 
 class AmountPeople(tk.Frame):
     user_count = 0
+    chosen_users = []
 
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         self.master = master
         tk.Label(self, text="Dodaj osoby", font=('Helvetica', 10)).grid(row=0, column=1)
         tk.Label(self, text="Dodaj wagę", font=('Helvetica', 10)).grid(row=0, column=2)
+        master.database.c.execute("SELECT name FROM users")
+        self.users = [i[0] for i in master.database.c.fetchall()]
         self.another_user()
         tk.Button(self, text="kolejny",
                   command=self.another_user).grid(row=100, column=1)
@@ -57,11 +60,16 @@ class AmountPeople(tk.Frame):
     def another_user(self):
         tk.Label(self, text=f"User:{self.user_count + 1}", font=('Helvetica', 10)).grid(row=self.user_count + 1,
                                                                                         column=0)
-        self.n_entry = tk.Entry(self)
-        self.n_entry.grid(row=self.user_count + 1, column=2, padx=(10, 10))
-        self.n_entry = ttk.Combobox(self)
-        self.n_entry.grid(row=self.user_count + 1, column=1, pady=(10, 10))
+        name = ttk.Combobox(self, values=self.users)
+        name.grid(row=self.user_count + 1, column=1, pady=(10, 10))
+        name.bind('<<ComboboxSelected>>', self.changed)
+        weight = tk.Entry(self)
+        weight.grid(row=self.user_count + 1, column=2, padx=(10, 10))
+        self.chosen_users.append([name, weight])
         self.user_count += 1
+
+    def changed(self,  value):
+        print(value.widget.get())
 
 
 class AddNewUserPageOne(tk.Frame):
@@ -241,24 +249,22 @@ class AddNewUserPageFour(tk.Frame):
         self.cuisine = [i[1] for i in data if i[0] == 'kuchnia']
         self.title = tk.Label(self, text="Ustaw smak od najlepszego do najgorszego", font=('Helvetica', 10, "bold"))
         self.title.grid(column=1, columnspan=3)
-        self.l = tk.Listbox(self, selectmode=tk.SINGLE)
+        self.list_box = tk.Listbox(self, selectmode=tk.SINGLE)
         if len(master.new_user['pref']['smak']) == 0:
             self.instert_to_list(self.taste)
         else:
             self.actual = 'type'
             self.prev_page()
-        self.l.grid(row=1, column=2, rowspan=8)
+        self.list_box.grid(row=1, column=2, rowspan=8)
 
         tk.Button(self, text="up",
                   command=self.up).grid(row=3, column=3)
         tk.Button(self, text="down",
                   command=self.down).grid(row=4, column=3)
 
-        tk.Button(self, text="dalej",
-                  command=self.next_page).grid(row=9, column=3)
-        tk.Button(self, text="powrót",
-                  command=self.prev_page).grid(row=9, column=1)
-
+        self.next_button = tk.Button(self, text="dalej", command=self.next_page)
+        self.next_button.grid(row=9, column=3)
+        tk.Button(self, text="powrót", command=self.prev_page).grid(row=9, column=1)
 
     def prev_page(self):
         if self.actual == 'taste':
@@ -271,6 +277,7 @@ class AddNewUserPageFour(tk.Frame):
             self.instert_to_list([i[0] for i in _list])
         else:
             self.title['text'] = "Ustaw typ od najlepszego do najgorszego"
+            self.next_button['text'] = 'dalej'
             self.clear_list()
             self.actual = 'type'
             _list = sorted(self.master.new_user['pref']['typ'].items(), key=lambda x: x[1], reverse=True)
@@ -280,50 +287,52 @@ class AddNewUserPageFour(tk.Frame):
         if self.actual == 'taste':
             self.title['text'] = "Ustaw typ od najlepszego do najgorszego"
             for i in self.taste:
-                self.master.new_user['pref']['smak'][i] = self.l.index(tk.END) - self.l.get(0, "end").index(i)
+                self.master.new_user['pref']['smak'][i] = self.list_box.index(tk.END) \
+                                                          - self.list_box.get(0, "end").index(i)
             self.actual = 'type'
             self.clear_list()
             self.instert_to_list(self.type)
         elif self.actual == 'type':
             self.title['text'] = "Ustaw kuchnie od najlepszego do najgorszego"
             for i in self.type:
-                self.master.new_user['pref']['typ'][i] = self.l.index(tk.END) - self.l.get(0, "end").index(i)
+                self.master.new_user['pref']['typ'][i] = self.list_box.index(tk.END) \
+                                                         - self.list_box.get(0, "end").index(i)
             self.actual = 'cuisine'
             self.clear_list()
             self.instert_to_list(self.cuisine)
+            self.next_button['text'] = 'Zapisz'
         else:
             for i in self.cuisine:
-                self.master.new_user['pref']['kuchnia'][i] = self.l.index(tk.END) - self.l.get(0, "end").index(i)
+                self.master.new_user['pref']['kuchnia'][i] = self.list_box.index(tk.END) \
+                                                             - self.list_box.get(0, "end").index(i)
 
             self.master.database.save_user(self.master.new_user)
             self.master.switch_frame(StartPage)
         print(self.master.new_user)
 
     def clear_list(self):
-        while self.l.index(tk.END) > 0:
-            print(self.l.index(tk.END))
-            self.l.delete(0)
+        while self.list_box.index(tk.END) > 0:
+            print(self.list_box.index(tk.END))
+            self.list_box.delete(0)
 
     def instert_to_list(self, _list):
         for i in _list:
-            self.l.insert(tk.END, i)
+            self.list_box.insert(tk.END, i)
 
     def up(self):
-        active = self.l.index(tk.ACTIVE)
+        active = self.list_box.index(tk.ACTIVE)
         if active != 0:
-            text = self.l.get(active)
-            self.l.delete(active)
-            self.l.insert(active-1, text)
-            self.l.activate(active-1)
+            text = self.list_box.get(active)
+            self.list_box.delete(active)
+            self.list_box.insert(active - 1, text)
+            self.list_box.activate(active - 1)
 
     def down(self):
-        active = self.l.index(tk.ACTIVE)
-        text = self.l.get(active)
-        self.l.delete(active)
-        self.l.insert(active+1, text)
-        self.l.activate(active+1)
-
-
+        active = self.list_box.index(tk.ACTIVE)
+        text = self.list_box.get(active)
+        self.list_box.delete(active)
+        self.list_box.insert(active + 1, text)
+        self.list_box.activate(active + 1)
 
 
 if __name__ == '__main__':
