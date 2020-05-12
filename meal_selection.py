@@ -5,7 +5,7 @@ from ahp import AHP
 
 class MealSelection:
     def __init__(self, database, users_and_weights):
-        self.database = database
+        self.database = database.connect
         self.users, self.weights = self._extract_users_and_weights(users_and_weights)
         self.meat, self.allergens = self._get_all_restrictions()
 

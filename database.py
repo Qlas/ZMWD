@@ -9,10 +9,6 @@ class Database:
         self.c = self.connect.cursor()
         self._create_new_database()
 
-    def cursor(self):
-        """For Pandas support"""
-        return self.c
-
     def _create_new_database(self):
         try:
             self.c.execute("SELECT * FROM users")
