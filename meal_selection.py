@@ -9,6 +9,7 @@ class MealSelection:
         self.users, self.weights = self._extract_users_and_weights(users_and_weights)
         self.meat, self.allergens = self._get_all_restrictions()
         self.meals = self._get_all_meals()
+        self.meals = self._apply_allergen_restrictions()
 
     def _extract_users_and_weights(self, users_and_weights):
         """Extracts data from [(usercombo, weightfield), ...]"""
@@ -33,3 +34,11 @@ class MealSelection:
         meat_data = result.loc[['ryby', 'weganin', 'wegetarianin']]
         allergens_data = result.loc[result.index.difference(meat_data.index).values]
         return meat_data, allergens_data
+
+    def _apply_allergen_restrictions(self):
+        """Filters out allergenic meals"""
+        active_allergens = self.allergens.loc[self.allergens['SUM(value)'] >= 1].index.values
+        filtered_meals = self.meals
+        for allergen in active_allergens:
+            filtered_meals = filtered_meals.loc[filtered_meals[allergen] < 1]
+        return filtered_meals
