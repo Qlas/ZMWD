@@ -61,9 +61,9 @@ class MealSelection:
         query_filter = f"IN {self.users}" if len(self.users) > 1 else f"= '{self.users[0]}'"
         # Get data about user preferences
         query = f"SELECT users.name, ahp_pref_name, value FROM users INNER JOIN user_ahp_pref ON users.id=user_ahp_pref.user_id WHERE users.name {query_filter}"
-        result = pd.read_sql_query(query, self.database).set_index(['name'])
+        result = pd.read_sql_query(query, self.database).set_index(['name', 'ahp_pref_name'])
         # Calculate meal rating for each user
         for user in self.users:
-            user_raw_preferences = list(result.loc[user]['value'])
+            user_raw_preferences = result.loc[user, 'typ-kuchnia']['value'], result.loc[user, 'kuchnia-smak']['value'], result.loc[user, 'typ-smak']['value']
             user_AHP = AHP(*user_raw_preferences)
-            user_preferences = user_AHP.get_preferences()
+            user_preferences = user_AHP.get_preferences() # [typ, kuchnia, smak]
