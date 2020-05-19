@@ -33,7 +33,7 @@ class Database:
                            "nasiona INTEGER, słony INTEGER, słodki INTEGER, ostry INTEGER, kwaśny INTEGER, "
                            "polska INTEGER, włoska INTEGER, japońska INTEGER, indyjska INTEGER, chińska INTEGER, "
                            "amerykańska INTEGER, śniadanie INTEGER, obiad INTEGER, kolacja INTEGER, zupa INTEGER, "
-                           "sałatka INTEGER, makaron INTEGER, danie_głowne INTEGER, deser INTEGER)")
+                           "sałatka INTEGER, makaron INTEGER, 'danie główne' INTEGER, deser INTEGER)")
             self._fill_data()
             self.connect.commit()
 
