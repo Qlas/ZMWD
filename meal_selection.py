@@ -59,11 +59,45 @@ class MealSelection:
         """Handles meal rating procedure"""
         # If only one user is given then query must be altered a bit, otherwise it will throw an error
         query_filter = f"IN {self.users}" if len(self.users) > 1 else f"= '{self.users[0]}'"
-        # Get data about user preferences
-        query = f"SELECT users.name, ahp_pref_name, value FROM users INNER JOIN user_ahp_pref ON users.id=user_ahp_pref.user_id WHERE users.name {query_filter}"
-        result = pd.read_sql_query(query, self.database).set_index(['name', 'ahp_pref_name'])
+        # Get data about user AHP preferences
+        query_ahp_pref = f"SELECT users.name, ahp_pref_name, value FROM users INNER JOIN user_ahp_pref ON users.id=user_ahp_pref.user_id WHERE users.name {query_filter}"
+        result_ahp_pref = pd.read_sql_query(query_ahp_pref, self.database).set_index(['name', 'ahp_pref_name'])
+        # Get data about user other preferences
+        query_pref = f"SELECT users.name, type_name, subtype, value FROM users INNER JOIN user_pref ON users.id=user_pref.user_id WHERE users.name {query_filter}"
+        result_pref = pd.read_sql_query(query_pref, self.database).set_index(['name', 'type_name', 'subtype'])
+        result_pref = result_pref.sort_index()
         # Calculate meal rating for each user
+        self.meals['Rating'] = 0
+        user_ratings = []
         for user in self.users:
-            user_raw_preferences = result.loc[user, 'typ-kuchnia']['value'], result.loc[user, 'kuchnia-smak']['value'], result.loc[user, 'typ-smak']['value']
+            user_raw_preferences = result_ahp_pref.loc[user, 'typ-kuchnia']['value'], result_ahp_pref.loc[user, 'kuchnia-smak']['value'], result_ahp_pref.loc[user, 'typ-smak']['value']
             user_AHP = AHP(*user_raw_preferences)
             user_preferences = user_AHP.get_preferences() # [typ, kuchnia, smak]
+            # Prepare Data Frame for user rating calculations
+            user_meals_rating = self.meals.loc[:, ('name', 'Rating')].copy()
+            user_meals_rating['type_rating'] = 0
+            user_meals_rating['kitchen_rating'] = 0
+            user_meals_rating['taste_rating'] = 0
+            # Calculate score for meal taste
+            tastes_list = list(result_pref.loc[user, 'smak'].index)
+            for taste in tastes_list:
+                user_meals_rating['taste_rating'] += self.meals[taste] * result_pref.loc[user, 'smak', taste].value
+            # Calculate score for meal type
+            types_list = list(result_pref.loc[user, 'typ'].index)
+            for type_ in types_list:
+                user_meals_rating['type_rating'] += self.meals[type_] * result_pref.loc[user, 'typ', type_].value
+            # Calculate score for meal kitchen
+            kitchens_list = list(result_pref.loc[user, 'kuchnia'].index)
+            for kitchen in kitchens_list:
+                user_meals_rating['kitchen_rating'] += self.meals[kitchen] * result_pref.loc[user, 'kuchnia', kitchen].value
+            # Sum scores
+            for i, rating in zip(range(0, 3), ['type_rating', 'kitchen_rating', 'taste_rating']):
+                user_meals_rating['Rating'] += user_meals_rating[rating] * user_preferences[i]
+            user_ratings.append(user_meals_rating)
+        weight_sum = 0
+        for weight, rating in zip(self.weights, user_ratings):
+            weight_sum += weight
+            self.meals['Rating'] += rating['Rating'] * weight
+        self.meals['Rating'] = self.meals['Rating'] / weight_sum
+        self.meals_rated = self.meals.loc[:, ('name', 'Rating')].sort_values(by='Rating', ascending=False)
+        return self.meals_rated
