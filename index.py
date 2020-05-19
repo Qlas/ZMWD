@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from database import Database
 from meal_selection import MealSelection
+from copy import deepcopy
 
 class App(tk.Tk):
     users = []
@@ -40,39 +41,89 @@ class StartPage(tk.Frame):
 
 class AmountPeople(tk.Frame):
     user_count = 0
-    chosen_users = []
 
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         self.master = master
-        tk.Label(self, text="Dodaj osoby", font=('Helvetica', 10)).grid(row=0, column=1)
-        tk.Label(self, text="Dodaj wagę", font=('Helvetica', 10)).grid(row=0, column=2)
         master.database.c.execute("SELECT name FROM users")
         self.users = [i[0] for i in master.database.c.fetchall()]
-        self.another_user()
-        tk.Button(self, text="kolejny",
-                  command=self.another_user).grid(row=100, column=1)
-        tk.Button(self, text="dalej",
-                  command=self.find_meal).grid(row=100, column=2)
-        tk.Button(self, text="powrót",
-                  command=lambda: master.switch_frame(StartPage)).grid(row=100, column=0)
+        self.left_users = deepcopy(self.users)
+        self.chosen_users = []
 
-    def find_meal(self):
-        self.meals = MealSelection(self.master.database, self.chosen_users)
+        self.error = tk.Label(self, text="", font=('Helvetica', 10))
+        self.error.pack(side=tk.TOP)
+        self.error.config(fg='red')
+
+        canvas = tk.Canvas(self, borderwidth=0, height=20)
+        frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=frame, anchor="nw", tags="frame", width=400)
+        canvas.pack(side="bottom", fill="both", expand=True)
+
+        self.canvas = tk.Canvas(self, highlightthickness=0)
+        self.frame = tk.Frame(self.canvas)
+        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.vsb.set)
+        self.vsb.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both")
+        self.canvas.create_window((0, 0), window=self.frame, anchor="nw",
+                                  tags="self.frame")
+        self.frame.bind("<Configure>", self.on_frame_configure)
+
+        tk.Button(frame, text="kolejny",
+                  command=self.another_user).pack()
+        tk.Button(canvas, text="dalej",
+                  command=self.next_page).pack(side=tk.RIGHT)
+        tk.Button(canvas, text="powrót",
+                  command=lambda: master.switch_frame(StartPage)).pack(side=tk.LEFT)
+
+        tk.Label(self.frame, text="Wybierz posiłek", font=('Helvetica', 10)).grid(row=1, column=0)
+        self.combo = ttk.Combobox(self.frame, values=['śniadanie', 'obiad', 'kolacja'], state="readonly")
+        self.combo.grid(row=1, column=1)
+        tk.Label(self.frame, text="Dodaj osoby", font=('Helvetica', 10)).grid(row=2, column=1)
+        tk.Label(self.frame, text="Dodaj wagę", font=('Helvetica', 10)).grid(row=2, column=2)
+        self.another_user()
+
+    def on_frame_configure(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def another_user(self):
-        tk.Label(self, text=f"User:{self.user_count + 1}", font=('Helvetica', 10)).grid(row=self.user_count + 1,
+        tk.Label(self.frame, text=f"User:{self.user_count + 1}", font=('Helvetica', 10)).grid(row=self.user_count + 3,
                                                                                         column=0)
-        name = ttk.Combobox(self, values=self.users)
-        name.grid(row=self.user_count + 1, column=1, pady=(10, 10))
+        name = ttk.Combobox(self.frame, values=self.left_users, state="readonly")
+        name.grid(row=self.user_count + 3, column=1, pady=(10, 10))
         name.bind('<<ComboboxSelected>>', self.changed)
-        weight = tk.Entry(self)
-        weight.grid(row=self.user_count + 1, column=2, padx=(10, 10))
+        weight = tk.Entry(self.frame)
+        weight.grid(row=self.user_count + 3, column=2, padx=(10, 10))
         self.chosen_users.append([name, weight])
         self.user_count += 1
 
-    def changed(self,  value):
-        print(value.widget.get())
+    def changed(self, value):
+        self.left_users = deepcopy(self.users)
+        for i in self.chosen_users:
+            if i[0].get() != '':
+                self.left_users.pop(self.left_users.index(i[0].get()))
+        for i in self.chosen_users:
+            i[0]['values'] = self.left_users
+
+    def next_page(self):
+        users = []
+        meal = self.combo.get()
+        if meal == '':
+            self.error['text'] = 'Wybierz posiłek'
+            return
+        try:
+            for i in self.chosen_users:
+                if i[0].get() != '':
+                    users.append([i[0].get(), int(i[1].get())])
+        except ValueError:
+            self.error['text'] = 'Wpisz odpowiednią wagę'
+            return
+        if len(users) == 0:
+            self.error['text'] = 'Musisz wybrać przynajmniej jednego użytkownika'
+            return
+
+        # users, meals
+        self.master.switch_frame(StartPage)
 
 
 class AddNewUserPageOne(tk.Frame):
