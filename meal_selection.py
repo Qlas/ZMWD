@@ -11,6 +11,7 @@ class MealSelection:
         self.users_count = len(self.users)
         self.meat, self.allergens = self._get_all_restrictions()
         self.meals = self._get_all_meals()
+        self.meals = self._apply_meal_restriction(meal_type)
         self.meals = self._apply_allergen_restrictions()
         self.meals = self._apply_meat_restrictions()
 
@@ -36,6 +37,10 @@ class MealSelection:
         for allergen in active_allergens:
             filtered_meals = filtered_meals.loc[filtered_meals[allergen] < 1]
         return filtered_meals
+
+    def _apply_meal_restriction(self, meal_type):
+        """Filters out all meal types except the one given"""
+        return self.meals.loc[self.meals[meal_type] >= 1]
 
     def _apply_meat_restrictions(self):
         """Filters out meaty meals if needed"""
