@@ -123,6 +123,7 @@ class AmountPeople(tk.Frame):
             return
 
         # users, meals
+        self.meals = MealSelection(self.master.database, users, meal_type=meal)
         self.master.switch_frame(StartPage)
 
 

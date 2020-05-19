@@ -4,23 +4,15 @@ from ahp import AHP
 
 
 class MealSelection:
-    def __init__(self, database, users_and_weights):
+    def __init__(self, database, users_and_weights, meal_type):
         self.database = database.connect
-        self.users, self.weights = self._extract_users_and_weights(users_and_weights)
+        self.users = [row[0] for row in users_and_weights]
+        self.weights = [row[1] for row in users_and_weights]
         self.users_count = len(self.users)
         self.meat, self.allergens = self._get_all_restrictions()
         self.meals = self._get_all_meals()
         self.meals = self._apply_allergen_restrictions()
         self.meals = self._apply_meat_restrictions()
-
-    def _extract_users_and_weights(self, users_and_weights):
-        """Extracts data from [(usercombo, weightfield), ...]"""
-        users = []
-        weights = []
-        for user, weight in users_and_weights:
-            users.append(user.get())
-            weights.append(float(weight.get()))
-        return tuple(users), tuple(weights)
 
     def _get_all_meals(self):
         """Retrieves all meals from database"""
