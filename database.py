@@ -28,12 +28,12 @@ class Database:
                            "FOREIGN KEY( "
                            "user_id) REFERENCES users(id), FOREIGN KEY(type_name) REFERENCES pref(type_name), "
                            "FOREIGN KEY(subtype) REFERENCES pref(subtype), PRIMARY KEY(user_id, type_name, subtype))")
-            self.c.execute("CREATE TABLE meals(id INTEGER PRIMARY KEY, name TEXT, wege INTEGER, wegan INTEGER, "
+            self.c.execute("CREATE TABLE meals(id INTEGER PRIMARY KEY, name TEXT, wegetarianin INTEGER, weganin INTEGER, "
                            "ryby INTEGER, nabiał INTEGER, orzechy INTEGER, gluten INTEGER, jajka INTEGER, "
                            "nasiona INTEGER, słony INTEGER, słodki INTEGER, ostry INTEGER, kwaśny INTEGER, "
                            "polska INTEGER, włoska INTEGER, japońska INTEGER, indyjska INTEGER, chińska INTEGER, "
                            "amerykańska INTEGER, śniadanie INTEGER, obiad INTEGER, kolacja INTEGER, zupa INTEGER, "
-                           "sałatka INTEGER, makaron INTEGER, danie_głowne INTEGER, deser INTEGER)")
+                           "sałatka INTEGER, makaron INTEGER, 'danie główne' INTEGER, deser INTEGER)")
             self._fill_data()
             self.connect.commit()
 

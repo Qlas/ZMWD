@@ -1,8 +1,8 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from database import Database
+from meal_selection import MealSelection
 from copy import deepcopy
-
 
 class App(tk.Tk):
     users = []
@@ -123,6 +123,7 @@ class AmountPeople(tk.Frame):
             return
 
         # users, meals
+        self.meals = MealSelection(self.master.database, users, meal_type=meal)
         self.master.switch_frame(StartPage)
 
 
