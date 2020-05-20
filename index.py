@@ -72,14 +72,14 @@ class AmountPeople(tk.Frame):
         self.canvas.create_window((0, 0), window=self.frame, anchor="nw",
                                   tags="self.frame")
         self.frame.bind("<Configure>", self.on_frame_configure)
-        self.frame.bind("<MouseWheel>", self._on_mousewheel)
+        self.frame.bind_all("<MouseWheel>", self._on_mousewheel)
 
         tk.Button(frame, text="kolejny",
                   command=self.another_user).pack()
         tk.Button(canvas, text="dalej",
                   command=self.next_page).pack(side=tk.RIGHT)
         tk.Button(canvas, text="powrót",
-                  command=lambda: master.switch_frame(StartPage)).pack(side=tk.LEFT)
+                  command=self.back).pack(side=tk.LEFT)
 
         tk.Label(self.frame, text="Wybierz posiłek", font=('Helvetica', 10)).grid(row=1, column=0)
         self.combo = ttk.Combobox(self.frame, values=['śniadanie', 'obiad', 'kolacja'], state="readonly")
@@ -145,7 +145,12 @@ class AmountPeople(tk.Frame):
 
         # users, meals
         self.meals = MealSelection(self.master.database, users, meal_type=meal)
+        self.frame.unbind_all("<MouseWheel>")
         self.master.switch_frame(ShowResult, self.meals, users, meal)
+
+    def back(self):
+        self.frame.unbind_all("<MouseWheel>")
+        self.master.switch_frame(StartPage)
 
 
 class ShowResult(tk.Frame):
@@ -171,10 +176,10 @@ class ShowResult(tk.Frame):
         self.canvas.create_window((0, 0), window=self.frame, anchor="nw",
                                   tags="self.frame")
         self.frame.bind("<Configure>", self.on_frame_configure)
-        self.frame.bind("<MouseWheel>", self._on_mousewheel)
+        self.frame.bind_all("<MouseWheel>", self._on_mousewheel)
 
         tk.Button(canvas, text="koniec",
-                  command=lambda: master.switch_frame(StartPage)).pack(side=tk.RIGHT)
+                  command=self.next_page).pack(side=tk.RIGHT)
         tk.Button(canvas, text="powrót",
                   command=self.back).pack(side=tk.LEFT)
 
@@ -197,7 +202,12 @@ class ShowResult(tk.Frame):
             tk.Label(self.frame, text=f"{round(meals[1][i],2)}", font=('Helvetica', 10)).grid(row=i+1, column=2)
 
     def back(self):
+        self.frame.unbind_all("<MouseWheel>")
         self.master.switch_frame(AmountPeople, self.args[1], self.args[2])
+
+    def next_page(self):
+        self.frame.unbind_all("<MouseWheel>")
+        self.master.switch_frame(StartPage)
 
 
 class EditUser(tk.Frame):
