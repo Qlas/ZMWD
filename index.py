@@ -135,7 +135,9 @@ class AmountPeople(tk.Frame):
         try:
             for i in self.chosen_users:
                 if i[0].get() != '':
-                    users.append([i[0].get(), int(i[1].get())])
+                    if not float(i[1].get()) > 0:
+                        raise ValueError
+                    users.append([i[0].get(), float(i[1].get())])
         except ValueError:
             self.error['text'] = 'Wpisz odpowiednią wagę'
             return
