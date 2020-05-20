@@ -19,8 +19,8 @@ class App(tk.Tk):
         self.database.close_connection()
         self.destroy()
 
-    def switch_frame(self, frame_class):
-        new_frame = frame_class(self)
+    def switch_frame(self, frame_class, *args):
+        new_frame = frame_class(self, args)
         if self._frame is not None:
             self._frame.destroy()
         self._frame = new_frame
@@ -28,21 +28,25 @@ class App(tk.Tk):
 
 
 class StartPage(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, *args):
         tk.Frame.__init__(self, master)
         master.new_user = {'name': '', 'const': {}, 'allergy': {}, 'ahp': {},
                            'pref': {'smak': {}, 'typ': {}, 'kuchnia': {}}}
         tk.Label(self, text="Start page", font=('Helvetica', 18, "bold")).grid(row=0, column=0)
         tk.Button(self, text="Znajdź obiad",
                   command=lambda: master.switch_frame(AmountPeople)).grid(row=1, column=0)
+        tk.Label(self).grid(row=2,column=0)
+        tk.Button(self, text="Edytuj użytkownika",
+                  command=lambda: master.switch_frame(EditUser)).grid(row=3, column=0)
+        tk.Label(self).grid(row=4, column=0)
         tk.Button(self, text="Dodaj użytkownika",
-                  command=lambda: master.switch_frame(AddNewUserPageOne)).grid(row=2, column=0)
+                  command=lambda: master.switch_frame(AddNewUserPageOne)).grid(row=5, column=0)
 
 
 class AmountPeople(tk.Frame):
     user_count = 0
 
-    def __init__(self, master):
+    def __init__(self, master, *args):
         tk.Frame.__init__(self, master)
         self.master = master
         master.database.c.execute("SELECT name FROM users")
@@ -68,6 +72,7 @@ class AmountPeople(tk.Frame):
         self.canvas.create_window((0, 0), window=self.frame, anchor="nw",
                                   tags="self.frame")
         self.frame.bind("<Configure>", self.on_frame_configure)
+        self.frame.bind("<MouseWheel>", self._on_mousewheel)
 
         tk.Button(frame, text="kolejny",
                   command=self.another_user).pack()
@@ -81,10 +86,20 @@ class AmountPeople(tk.Frame):
         self.combo.grid(row=1, column=1)
         tk.Label(self.frame, text="Dodaj osoby", font=('Helvetica', 10)).grid(row=2, column=1)
         tk.Label(self.frame, text="Dodaj wagę", font=('Helvetica', 10)).grid(row=2, column=2)
+        if len(args[0]) == 2:
+            self.combo.set(args[0][1])
+            for i in range(len(args[0][0])):
+                self.another_user()
+                self.chosen_users[i][0].set(args[0][0][i][0])
+                self.chosen_users[i][1].insert(0, args[0][0][i][1])
+                self.changed()
         self.another_user()
 
     def on_frame_configure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def another_user(self):
         tk.Label(self.frame, text=f"User:{self.user_count + 1}", font=('Helvetica', 10)).grid(row=self.user_count + 3,
@@ -97,13 +112,19 @@ class AmountPeople(tk.Frame):
         self.chosen_users.append([name, weight])
         self.user_count += 1
 
-    def changed(self, value):
+    def changed(self, *args):
         self.left_users = deepcopy(self.users)
         for i in self.chosen_users:
             if i[0].get() != '':
                 self.left_users.pop(self.left_users.index(i[0].get()))
         for i in self.chosen_users:
-            i[0]['values'] = self.left_users
+            if i[0].get() != '':
+                left_users = deepcopy(self.left_users)
+                left_users.append('')
+                i[0]['values'] = left_users
+            else:
+                i[0]['values'] = self.left_users
+
 
     def next_page(self):
         users = []
@@ -124,11 +145,92 @@ class AmountPeople(tk.Frame):
 
         # users, meals
         self.meals = MealSelection(self.master.database, users, meal_type=meal)
-        self.master.switch_frame(StartPage)
+        self.master.switch_frame(ShowResult, self.meals, users, meal)
+
+
+class ShowResult(tk.Frame):
+
+    def __init__(self, master, *args):
+        tk.Frame.__init__(self, master)
+        self.master = master
+        self.result = args[0][0]
+        self.args = args[0]
+        tk.Label(self, text="Proponowane posiłki", font=('Helvetica', 10)).pack(side=tk.TOP)
+
+        canvas = tk.Canvas(self, borderwidth=0, height=20)
+        frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=frame, anchor="nw", tags="frame", width=400)
+        canvas.pack(side="bottom", fill="both", expand=True)
+
+        self.canvas = tk.Canvas(self, highlightthickness=0)
+        self.frame = tk.Frame(self.canvas)
+        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.vsb.set)
+        self.vsb.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both")
+        self.canvas.create_window((0, 0), window=self.frame, anchor="nw",
+                                  tags="self.frame")
+        self.frame.bind("<Configure>", self.on_frame_configure)
+        self.frame.bind("<MouseWheel>", self._on_mousewheel)
+
+        tk.Button(canvas, text="koniec",
+                  command=lambda: master.switch_frame(StartPage)).pack(side=tk.RIGHT)
+        tk.Button(canvas, text="powrót",
+                  command=self.back).pack(side=tk.LEFT)
+
+        tk.Label(self.frame, text="Nazwa potrawy", font=('Helvetica', 10)).grid(row=0, column=0)
+        tk.Label(self.frame, text="Dopasowanie", font=('Helvetica', 10)).grid(row=0, column=2)
+        self.add_meals()
+
+    def on_frame_configure(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def add_meals(self):
+        meals = [list(self.result.rate_meals()['name']), list(self.result.rate_meals()['Rating'])]
+        print(self.result.rate_meals())
+        print(meals)
+        for i in range(len(meals[0])):
+            tk.Label(self.frame, text=f"{meals[0][i]}", font=('Helvetica', 10)).grid(row=i+1, column=0)
+            tk.Label(self.frame, text=f"{round(meals[1][i],2)}", font=('Helvetica', 10)).grid(row=i+1, column=2)
+
+    def back(self):
+        self.master.switch_frame(AmountPeople, self.args[1], self.args[2])
+
+
+class EditUser(tk.Frame):
+    def __init__(self, master, *args):
+        tk.Frame.__init__(self, master)
+        self.master = master
+        master.database.c.execute("SELECT name FROM users")
+        self.users = [i[0] for i in master.database.c.fetchall()]
+        tk.Label(self, text="Wybierz użytkownika", font=('Helvetica', 10)).grid(row=0, column=1, columnspan=3)
+        self.error = tk.Label(self, text="", font=('Helvetica', 10))
+        self.error.grid(row=1, column=1, columnspan=3)
+        self.error.config(fg='red')
+        tk.Label(self, text=f"Użytkownik:", font=('Helvetica', 10)).grid(row=2, column=1)
+        self.name = ttk.Combobox(self, values=self.users, state="readonly")
+        self.name.grid(row=2, column=3)
+        tk.Label(self).grid(row=3, column=0)
+        tk.Button(self, text="Dalej",
+                  command=self.next_page).grid(row=4, column=4)
+        tk.Button(self, text="Powrót",
+                  command=lambda: master.switch_frame(StartPage)).grid(row=4, column=0)
+
+    def next_page(self):
+        if self.name.get() == '':
+            self.error['text'] = 'Musisz wybrać użytkownika'
+            return
+        self.master.new_user = self.master.database.get_user(self.name.get())
+        print(self.master.new_user)
+        self.master.switch_frame(AddNewUserPageOne)
+
 
 
 class AddNewUserPageOne(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, *args):
         self.master = master
         self.fish = tk.IntVar()
         self.w = tk.IntVar()
@@ -153,13 +255,16 @@ class AddNewUserPageOne(tk.Frame):
 
     def set_values(self):
         self.n_entry.insert(0, self.master.new_user['name'])
+        self.master.database.c.execute("SELECT * FROM users WHERE name=?", (self.n_entry.get(),))
+        if len(self.master.database.c.fetchall()) != 0:
+            self.n_entry['state'] = 'disabled'
         if self.master.new_user['const']['mięso'] == 1:
             self.w.set(1)
         elif self.master.new_user['const']['wegetarianin'] == 1:
             self.w.set(2)
         else:
             self.w.set(3)
-        self.fish.set(self.master.new_user['const']['ryby'])
+        self.fish.set(int(self.master.new_user['const']['ryby']))
 
     def next_page(self):
         if self.n_entry.get() == '' or self.n_entry.get().startswith(' '):
@@ -167,7 +272,7 @@ class AddNewUserPageOne(tk.Frame):
         else:
             self.master.database.c.execute("SELECT * FROM users WHERE name=?", (self.n_entry.get(),))
             print()
-            if len(self.master.database.c.fetchall()) != 0:
+            if len(self.master.database.c.fetchall()) != 0 and self.n_entry.get() != self.master.new_user['name']:
                 self.error['text'] = 'To imię jest już zajęte'
             elif self.w.get() == 0:
                 self.error['text'] = 'Musisz zaznaczyć radio'
@@ -181,7 +286,7 @@ class AddNewUserPageOne(tk.Frame):
 
 
 class AddNewUserPageTwo(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, *args):
         self.master = master
         self.allergy = [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
         self.allergies = ('nabiał', 'orzechy', 'gluten', 'jajka')
@@ -218,7 +323,7 @@ class AddNewUserPageTwo(tk.Frame):
 
 
 class AddNewUserPageThree(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, *args):
         tk.Frame.__init__(self, master)
         self.master = master
         self.values = [tk.IntVar(), tk.IntVar(), tk.IntVar()]
@@ -292,7 +397,7 @@ class AddNewUserPageThree(tk.Frame):
 
 
 class AddNewUserPageFour(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, *args):
         self.master = master
         tk.Frame.__init__(self, master)
         print(self.master.new_user)
@@ -360,8 +465,11 @@ class AddNewUserPageFour(tk.Frame):
             for i in self.cuisine:
                 self.master.new_user['pref']['kuchnia'][i] = self.list_box.index(tk.END) \
                                                              - self.list_box.get(0, "end").index(i)
-
-            self.master.database.save_user(self.master.new_user)
+            self.master.database.c.execute("SELECT * FROM users WHERE name=?", (self.master.new_user['name'],))
+            if len(self.master.database.c.fetchall()) == 0:
+                self.master.database.save_user(self.master.new_user)
+            else:
+                self.master.database.update_user(self.master.new_user)
             self.master.switch_frame(StartPage)
         print(self.master.new_user)
 

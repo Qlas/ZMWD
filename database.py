@@ -28,7 +28,8 @@ class Database:
                            "FOREIGN KEY( "
                            "user_id) REFERENCES users(id), FOREIGN KEY(type_name) REFERENCES pref(type_name), "
                            "FOREIGN KEY(subtype) REFERENCES pref(subtype), PRIMARY KEY(user_id, type_name, subtype))")
-            self.c.execute("CREATE TABLE meals(id INTEGER PRIMARY KEY, name TEXT, wegetarianin INTEGER, weganin INTEGER, "
+            self.c.execute("CREATE TABLE meals(id INTEGER PRIMARY KEY, name TEXT, wegetarianin INTEGER, weganin "
+                           "INTEGER, "
                            "ryby INTEGER, nabiał INTEGER, orzechy INTEGER, gluten INTEGER, jajka INTEGER, "
                            "nasiona INTEGER, słony INTEGER, słodki INTEGER, ostry INTEGER, kwaśny INTEGER, "
                            "polska INTEGER, włoska INTEGER, japońska INTEGER, indyjska INTEGER, chińska INTEGER, "
@@ -72,6 +73,44 @@ class Database:
             for key, value in value_type.items():
                 self.c.execute("INSERT INTO user_pref(user_id, type_name, subtype, value) "
                                "VALUES (?, ?, ?, ?)", (user_id, key_type, key, value))
+        self.connect.commit()
+
+    def get_user(self, name):
+        user = {'name': name, 'const': {}, 'allergy': {}, 'ahp': {}, 'pref': {'smak': {}, 'typ': {}, 'kuchnia': {}}}
+        self.c.execute("SELECT id FROM users WHERE name = ?", (name,))
+        user_id = self.c.fetchall()[0][0]
+
+        self.c.execute("SELECT ahp_pref_name, value FROM user_ahp_pref WHERE user_id = ?", (user_id,))
+        for i in self.c.fetchall():
+            user['ahp'][i[0]] = i[1]
+
+        self.c.execute("SELECT type_name, subtype, value FROM user_pref WHERE user_id = ?", (user_id,))
+        for i in self.c.fetchall():
+            user['pref'][i[0]][i[1]] = i[2]
+
+        self.c.execute("SELECT res_name, value FROM user_res WHERE user_id = ?", (user_id,))
+        for i in self.c.fetchall():
+            if i[0] in ('ryby', 'mięso', 'wegetarianin', 'weganin'):
+                user['const'][i[0]] = int(i[1])
+            else:
+                user['allergy'][i[0]] = int(i[1])
+        return user
+
+    def update_user(self, data):
+        self.c.execute("SELECT id FROM users WHERE name = ?", (data['name'],))
+        user_id = self.c.fetchall()[0][0]
+
+        for key, value in data['const'].items():
+            self.c.execute("UPDATE user_res SET value = ? WHERE user_id = ? AND res_name = ?", (value, user_id, key))
+        for key, value in data['allergy'].items():
+            self.c.execute("UPDATE user_res SET value = ? WHERE user_id = ? AND res_name = ?", (value, user_id, key))
+        for key, value in data['ahp'].items():
+            self.c.execute("UPDATE user_ahp_pref SET value = ? WHERE user_id = ? AND ahp_pref_name = ?",
+                           (value, user_id, key))
+        for key_type, value_type in data['pref'].items():
+            for key, value in value_type.items():
+                self.c.execute("UPDATE user_pref SET value = ? WHERE user_id = ? AND type_name = ? AND subtype = ?",
+                               (value, user_id, key_type, key))
         self.connect.commit()
 
 
