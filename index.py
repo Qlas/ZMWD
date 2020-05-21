@@ -4,6 +4,7 @@ from database import Database
 from meal_selection import MealSelection
 from copy import deepcopy
 
+
 class App(tk.Tk):
     users = []
     new_user = {'name': '', 'const': {}, 'allergy': {}, 'ahp': {}, 'pref': {'smak': {}, 'typ': {}, 'kuchnia': {}}}
@@ -35,12 +36,127 @@ class StartPage(tk.Frame):
         tk.Label(self, text="Start page", font=('Helvetica', 18, "bold")).grid(row=0, column=0)
         tk.Button(self, text="Znajdź obiad",
                   command=lambda: master.switch_frame(AmountPeople)).grid(row=1, column=0)
-        tk.Label(self).grid(row=2,column=0)
-        tk.Button(self, text="Edytuj użytkownika",
-                  command=lambda: master.switch_frame(EditUser)).grid(row=3, column=0)
+        tk.Label(self).grid(row=2, column=0)
+        tk.Button(self, text="Dodaj Potrawe",
+                  command=lambda: master.switch_frame(AddNewMealPageOne)).grid(row=3, column=0)
         tk.Label(self).grid(row=4, column=0)
+        tk.Button(self, text="Edytuj użytkownika",
+                  command=lambda: master.switch_frame(EditUser)).grid(row=5, column=0)
+        tk.Label(self).grid(row=6, column=0)
         tk.Button(self, text="Dodaj użytkownika",
-                  command=lambda: master.switch_frame(AddNewUserPageOne)).grid(row=5, column=0)
+                  command=lambda: master.switch_frame(AddNewUserPageOne)).grid(row=7, column=0)
+
+
+class AddNewMealPageOne(tk.Frame):
+    def __init__(self, master, *args):
+        self.master = master
+        tk.Frame.__init__(self, master)
+        self.error = tk.Label(self, text='', font=('Helvetica', 10, 'bold'))
+        self.error.config(fg='red')
+        self.error.pack(side=tk.TOP)
+        tk.Label(self, text="Nazwa", font=('Helvetica', 10)).pack(side=tk.TOP)
+        self.n_entry = tk.Entry(self)
+        self.n_entry.pack(side=tk.TOP)
+        self.meal = {'name': self.n_entry.get(), 'diet': tk.IntVar(), 'fish': tk.IntVar(), 'allergens': {'nabiał': tk.IntVar(), 'orzechy': tk.IntVar(), 'gluten': tk.IntVar(), 'jajka': tk.IntVar(), 'nasiona': tk.IntVar()}, 'smak': {'słony': tk.IntVar(), 'słodki': tk.IntVar(), 'ostry': tk.IntVar(), 'kwaśny': tk.IntVar()}, 'kuchnia': {'polska': tk.IntVar(), 'włoska': tk.IntVar(), 'japońska': tk.IntVar(), 'indyjska': tk.IntVar(), 'chińska': tk.IntVar(), 'amerykańska': tk.IntVar()}, 'rodzaj': {'śniadanie': tk.IntVar(), 'obiad': tk.IntVar(), 'kolacja': tk.IntVar()}, 'typ': {'zupa': tk.IntVar(), 'sałatka': tk.IntVar(), 'makaron': tk.IntVar(), 'główne': tk.IntVar(), 'deser': tk.IntVar()}}
+
+        canvas = tk.Canvas(self, borderwidth=0, height=20)
+        frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=frame, anchor="nw", tags="frame", width=400)
+        canvas.pack(side="bottom", fill="both", expand=True)
+
+        self.canvas = tk.Canvas(self, highlightthickness=0)
+        self.frame = tk.Frame(self.canvas)
+        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.vsb.set)
+        self.vsb.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both")
+        self.canvas.create_window((0, 0), window=self.frame, anchor="nw",
+                                  tags="self.frame")
+        self.frame.bind("<Configure>", self.on_frame_configure)
+        self.frame.bind_all("<MouseWheel>", self._on_mousewheel)
+
+        # tk.Label(self, text="Zaznacz czy..", font=('Helvetica', 18, "bold")).grid(row=2, column=1)
+        tk.Label(self.frame, text='Zaznacz rodzaj diety: ', font=('Helvetica', 10, 'bold')).grid(row=0, column=0)
+        tk.Radiobutton(self.frame, text="Mięso", variable=self.meal['diet'], value=1).grid(row=1, column=0, sticky='w')
+        tk.Radiobutton(self.frame, text="wegetariańskie", variable=self.meal['diet'], value=2).grid(row=2, column=0, sticky='w')
+        tk.Radiobutton(self.frame, text="wegańskie", variable=self.meal['diet'], value=3).grid(row=3, column=0, sticky='w')
+        tk.Checkbutton(self.frame, text="ryby", variable=self.meal['fish']).grid(row=4, column=0, sticky='w')
+
+        tk.Label(self.frame, text='Alergeny: ', font=('Helvetica', 10, 'bold')).grid(row=0, column=1)
+        i = 1
+        for key, value in self.meal['allergens'].items():
+            tk.Checkbutton(self.frame, text=f"{key}", variable=self.meal['allergens'][key]).grid(row=i, column=1, sticky='w')
+            i += 1
+        tk.Label(self.frame, text='', font=('Helvetica', 10, 'bold')).grid(row=0, column=2)
+        tk.Label(self.frame, text='Kuchnia: ', font=('Helvetica', 10, 'bold')).grid(row=0, column=3)
+        i = 1
+        for key, value in self.meal['kuchnia'].items():
+            tk.Checkbutton(self.frame, text=f"{key}", variable=self.meal['kuchnia'][key]).grid(row=i, column=3, sticky='w')
+            i += 1
+
+        tk.Label(self.frame, text='Rodzaj: ', font=('Helvetica', 10, 'bold')).grid(row=7, column=0)
+        i = 8
+        for key, value in self.meal['rodzaj'].items():
+            tk.Checkbutton(self.frame, text=f"{key}", variable=self.meal['rodzaj'][key]).grid(row=i, column=0, sticky='w')
+            i+=1
+
+
+        tk.Label(self.frame, text='Typ: ', font=('Helvetica', 10, 'bold')).grid(row=7, column=1)
+        i = 8
+        for key, value in self.meal['typ'].items():
+            tk.Checkbutton(self.frame, text=f"{key}", variable=self.meal['typ'][key]).grid(row=i, column=1, sticky='w')
+            i+=1
+
+        tk.Label(self.frame, text='Smak: ', font=('Helvetica', 10, 'bold')).grid(row=7, column=2)
+        i = 8
+        for key, value in self.meal['smak'].items():
+            tk.Checkbutton(self.frame, text=f"{key}", variable=self.meal['smak'][key]).grid(row=i, column=2, sticky='w')
+            i+=1
+
+
+        tk.Button(canvas, text="Dalej",
+                  command=self.next_page).pack(side=tk.RIGHT)
+        tk.Button(canvas, text="Powrót",
+                  command=lambda: master.switch_frame(StartPage)).pack(side=tk.LEFT)
+        # if self.master.new_user['name'] != '':
+        #     self.set_values()
+
+    def on_frame_configure(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def next_page(self):
+        if self.n_entry.get() == '':
+            self.error['text'] = 'Wpisz nazwe potrawy'
+            return
+
+        self.master.database.c.execute("SELECT * FROM meals WHERE name=?", (self.n_entry.get(),))
+        if len(self.master.database.c.fetchall()) != 0:
+            self.error['text'] = 'Ta nazwa jest już zajęta'
+            return
+        if self.meal['diet'].get() == 0:
+            self.error['text'] = 'Musisz wybrać rodzaj diety'
+            return
+        if all(val.get() == 0 for key, val in self.meal['kuchnia'].items()):
+            self.error['text'] = 'Musisz wybrać chociaż jedną kuchnię'
+            return
+
+        if all(val.get() == 0 for key, val in self.meal['rodzaj'].items()):
+            self.error['text'] = 'Musisz wybrać chociaż jednen rodzaj'
+            return
+
+        if all(val.get() == 0 for key, val in self.meal['typ'].items()):
+            self.error['text'] = 'Musisz wybrać chociaż jeden typ'
+            return
+        if all(val.get() == 0 for key, val in self.meal['smak'].items()):
+            self.error['text'] = 'Musisz wybrać chociaż jeden smak'
+            return
+        self.meal['name'] = self.n_entry.get()
+        self.master.database.add_meal(self.meal)
+        self.frame.unbind_all("<MouseWheel>")
+        self.master.switch_frame(StartPage)
 
 
 class AmountPeople(tk.Frame):
@@ -103,7 +219,7 @@ class AmountPeople(tk.Frame):
 
     def another_user(self):
         tk.Label(self.frame, text=f"User:{self.user_count + 1}", font=('Helvetica', 10)).grid(row=self.user_count + 3,
-                                                                                        column=0)
+                                                                                              column=0)
         name = ttk.Combobox(self.frame, values=self.left_users, state="readonly")
         name.grid(row=self.user_count + 3, column=1, pady=(10, 10))
         name.bind('<<ComboboxSelected>>', self.changed)
@@ -124,7 +240,6 @@ class AmountPeople(tk.Frame):
                 i[0]['values'] = left_users
             else:
                 i[0]['values'] = self.left_users
-
 
     def next_page(self):
         users = []
@@ -200,8 +315,8 @@ class ShowResult(tk.Frame):
         print(self.result.rate_meals())
         print(meals)
         for i in range(len(meals[0])):
-            tk.Label(self.frame, text=f"{meals[0][i]}", font=('Helvetica', 10)).grid(row=i+1, column=0)
-            tk.Label(self.frame, text=f"{round(meals[1][i],2)}", font=('Helvetica', 10)).grid(row=i+1, column=2)
+            tk.Label(self.frame, text=f"{meals[0][i]}", font=('Helvetica', 10)).grid(row=i + 1, column=0)
+            tk.Label(self.frame, text=f"{round(meals[1][i], 2)}", font=('Helvetica', 10)).grid(row=i + 1, column=2)
 
     def back(self):
         self.frame.unbind_all("<MouseWheel>")
@@ -238,7 +353,6 @@ class EditUser(tk.Frame):
         self.master.new_user = self.master.database.get_user(self.name.get())
         print(self.master.new_user)
         self.master.switch_frame(AddNewUserPageOne)
-
 
 
 class AddNewUserPageOne(tk.Frame):

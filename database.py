@@ -113,6 +113,36 @@ class Database:
                                (value, user_id, key_type, key))
         self.connect.commit()
 
+    def add_meal(self, data):
+        _list = [data['name']]
+        if data['diet'].get() == 1:
+            _list.append(0)
+            _list.append(0)
+        elif data['diet'].get() == 2:
+            _list.append(1)
+            _list.append(0)
+        else:
+            _list.append(0)
+            _list.append(1)
+        _list.append(data['fish'].get())
+        for key, value in data['allergens'].items():
+            _list.append(value.get())
+        for key, value in data['smak'].items():
+            _list.append(value.get())
+        for key, value in data['kuchnia'].items():
+            _list.append(value.get())
+        for key, value in data['rodzaj'].items():
+            _list.append(value.get())
+        for key, value in data['typ'].items():
+            _list.append(value.get())
+
+        self.c.execute("INSERT INTO meals(name, wegetarianin, weganin, ryby, nabiał, orzechy, gluten, jajka, nasiona, "
+                       "słony, słodki, ostry, kwaśny, polska, włoska, japońska, indyjska, chińska, amerykańska, "
+                       "śniadanie, obiad, kolacja, zupa, sałatka, makaron, 'danie główne', deser) VALUES (?, ?, ?, ?, "
+                       "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                           "?, ?, ?, ?, ?, ?)", _list)
+        self.connect.commit()
+
 
 def read_xls():
     df = pd.read_excel('potrawy.xlsx', 'Arkusz1', skiprows=1)
